@@ -8,6 +8,14 @@ Variables:
 
 - `PASSWORD`: define a password - you really should overwrite the default: `change-me`
 
+Volumes:
+
+- `/data`: user home, use it for your projects, configuration is in `/data/.config`
+
+SSH-Keys:
+
+- `/data/.ssh`: copy SSH keys into this path
+
 ## Use Docker
 
 In `docker-compose.yml` add below `services:` - `vscode:` the tag `user: "100:xxx"`, where you replace `xxx` by the group id of `/var/run/docker.sock` in the *host* system, on my system, this is `999`, the id of group `docker`:
@@ -38,7 +46,19 @@ services:
 
 ## Login to Github with SSH Key
 
-Be careful when you use this configuration. Make shure, the SSH key does only access GitHub and does not access any of your server. Otherwise create a new SSH key, only for this purpose. Use an SSH key with a password to be more secure.
+Be careful when you use this configuration. Make shure, the SSH key does only access GitHub and does not access any of your server. Otherwise create a new SSH key, only for this purpose.
+
+The SSH Key must not have a password.
+
+You can add the key file in another way into `docker-compose`, e.g. by copying it into the volume.
+Make sure the file is owned by user `somebody` insde the container:
+
+    docker exec vscode_vscode_1 /bin/mkdir /data/.ssh
+    docker exec vscode_vscode_1 /bin/chmod go= /data/.ssh
+    docker cp ~/.ssh/id_ed25519 vscode_vscode_1:/data/.ssh/id_ed25519
+    docker exec -u root vscode_vscode_1 /bin/chown somebody /data/.ssh/id_ed25519
+
+### Docker Swarm Configuration File
 
 To use your ssh key inside the visual studio code environment, namely to checkout from GitHub using SSH, you mount an existing SSH key as configuration, e.g. if you have an SSH key in `~/.ssh/id_ed25519`:
 
@@ -49,7 +69,7 @@ services:
   vscode:
     configs:
       - source: ssh-key
-        target: /config/.ssh/id
+        target: /data/.ssh/id_ed25519
 ```
 
 and below `configs`, define the `ssh-key` configuration that points to a SSH key on your host server:
@@ -60,10 +80,4 @@ configs:
     file: ~/.ssh/id_ed25519
 ```
 
-This configuration only works in docker swarm. You can add the key file in another way into `docker-compose`, e.g. by copying it into the volume:
-
-    docker copy ~/.ssh/id_ed25519 vscode_vscode_1:/config/.ssh/id
-
-Make sure the file is owned by user `somebody` insde the container:
-
-    docker exec -u root vscode_vscode_1 /bin/chown somebody /config/.ssh/id
+This configuration only works in docker swarm. 

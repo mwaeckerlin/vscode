@@ -18,7 +18,7 @@ services:
         target: /var/run/docker.sock
     configs:
       - source: ssh-key
-        target: /config/.ssh/id
+        target: /data/.ssh/id
 
 volumes:
   data:
