@@ -3,6 +3,7 @@ services:
   vscode:
     image: mwaeckerlin/vscode
     build: .
+    user: "100:999"
     ports:
       - 8080:8080
     volumes:
@@ -15,7 +16,14 @@ services:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock
+    configs:
+      - source: ssh-key
+        target: /config/.ssh/id
 
 volumes:
   data:
   config:
+
+configs:
+  ssh-key:
+    file: ~/.ssh/id_ed25519
