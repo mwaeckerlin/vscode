@@ -18,31 +18,13 @@ SSH-Keys:
 
 ## Use Docker
 
-In `docker-compose.yml` add below `services:` - `vscode:` the tag `user: "100:xxx"`, where you replace `xxx` by the group id of `/var/run/docker.sock` in the *host* system, on my system, this is `999`, the id of group `docker`:
+A local docker instance is integrated into the image. 
 
-```bash
-$ ls -l /var/run/docker.sock
-srw-rw---- 1 root docker 0 Mär  8 21:31 /var/run/docker.sock
-$ getent group docker | cut -d: -f3
-999
-```
+Note: Because of docker in docker, the image must be started with option `--privileged`. Without this option, docker will not work. Everything else should be fine.
 
-```yaml
-services:
-  vscode:
-    user: "100:999"
-```
+Be aware: With `--priviledged` you gain access to upper layer operation system.
 
-Then add below `services:` - `vscode:` - `volumes:` a bind mount to `/var/run/docker.pid`:
-
-```yaml
-services:
-  vscode:
-    volumes:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-```
+We don't bind-mount `/var/run/docker.sock`, because that would give you access to all docker images in the host system, including your own. That's why we start an own docker instance inside the image.
 
 ## Login to Github with SSH Key
 
@@ -50,13 +32,13 @@ Be careful when you use this configuration. Make shure, the SSH key does only ac
 
 The SSH Key must not have a password.
 
-You can add the key file in another way into `docker-compose`, e.g. by copying it into the volume.
+You can add the key file in another way into the container, e.g. by copying it into the volume.
 Make sure the file is owned by user `somebody` insde the container:
 
-    docker exec vscode_vscode_1 /bin/mkdir /data/.ssh
-    docker exec vscode_vscode_1 /bin/chmod go= /data/.ssh
-    docker cp ~/.ssh/id_ed25519 vscode_vscode_1:/data/.ssh/id_ed25519
-    docker exec -u root vscode_vscode_1 /bin/chown somebody /data/.ssh/id_ed25519
+    docker-compose exec vscode /bin/mkdir /data/.ssh
+    docker-compose exec vscode /bin/chmod go= /data/.ssh
+    docker-compose cp ~/.ssh/id* vscode:/data/.ssh/
+    docker-compose exec -u root vscode /bin/chown -R somebody /data/.ssh
 
 ### Docker Swarm Configuration File
 
