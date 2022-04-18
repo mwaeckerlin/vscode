@@ -11,6 +11,7 @@ Variables:
 Volumes:
 
 - `/data`: user home, use it for your projects, configuration is in `/data/.config`
+- `/docker`: everything related to docker - you may store this permanently, if you want local docker containers to survive a container recreation
 
 SSH-Keys:
 
@@ -18,11 +19,11 @@ SSH-Keys:
 
 ## Use Docker
 
-A local docker instance is integrated into the image. 
+A local docker instance is integrated into the image. Docker is running rootless.
 
 Note: Because of docker in docker, the image must be started with option `--privileged`. Without this option, docker will not work. Everything else should be fine.
 
-Be aware: With `--priviledged` you gain access to upper layer operation system.
+Be aware: With `--privileged` you gain access to upper layer operation system.
 
 We don't bind-mount `/var/run/docker.sock`, because that would give you access to all docker images in the host system, including your own. That's why we start an own docker instance inside the image.
 
@@ -37,7 +38,7 @@ Make sure the file is owned by user `somebody` insde the container:
 
     docker-compose exec vscode /bin/mkdir /data/.ssh
     docker-compose exec vscode /bin/chmod go= /data/.ssh
-    docker-compose cp ~/.ssh/id* vscode:/data/.ssh/
+    docker-compose cp ~/.ssh/id_ed25519 vscode:/data/.ssh/
     docker-compose exec -u root vscode /bin/chown -R somebody /data/.ssh
 
 ### Docker Swarm Configuration File
