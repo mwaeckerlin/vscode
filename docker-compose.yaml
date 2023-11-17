@@ -1,0 +1,24 @@
+version: "3"
+services:
+  vscode:
+    image: mwaeckerlin/vscode
+    build: .
+    privileged: true
+    ports:
+     - 8080:8080
+    volumes:
+      - code:/code
+    environment:
+      HASHED_PASSWORD: # echo -n "YOUR-PASSWORD" | npx argon2-cli -e
+      PASSWORD:
+  fix-access:
+    image: mwaeckerlin/very-base
+    command: 
+     - '/bin/sh'
+     - '-c'
+     - 'chown -R $${RUN_USER}:$${RUN_GROUP} /code'
+    volumes:
+      - code:/code
+   
+volumes:
+  code:
