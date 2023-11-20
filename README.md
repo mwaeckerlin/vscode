@@ -6,16 +6,17 @@ Run `docker-compose up`, browse to [http://localhost:8080], enter password: `cha
 
 Variables:
 
-- `PASSWORD`: define a password - you really should overwrite the default: `change-me`
+- `PASSWORD`: define a password
+- `HASHED_PASSWORD`: define a password in hashed format, use `echo -n "a password" | npx argon2-cli -e` to hash a password
 
 Volumes:
 
-- `/data`: user home, use it for your projects, configuration is in `/data/.config`
+- `/code`: user home, use it for your projects, configuration is in `/code/.config`
 - `/docker`: everything related to docker - you may store this permanently, if you want local docker containers to survive a container recreation
 
 SSH-Keys:
 
-- `/data/.ssh`: copy SSH keys into this path
+- `/code/.ssh`: copy SSH keys into this path
 
 ## Use Docker
 
@@ -33,13 +34,12 @@ Be careful when you use this configuration. Make shure, the SSH key does only ac
 
 The SSH Key must not have a password.
 
-You can add the key file in another way into the container, e.g. by copying it into the volume.
-Make sure the file is owned by user `somebody` insde the container:
+You can add the key file in another way into the container, e.g. by copying it into the volume. Make sure the file is owned by user `somebody` inside the container:
 
-    docker-compose exec vscode /bin/mkdir /data/.ssh
-    docker-compose exec vscode /bin/chmod go= /data/.ssh
-    docker-compose cp ~/.ssh/id_ed25519 vscode:/data/.ssh/
-    docker-compose exec -u root vscode /bin/chown -R somebody /data/.ssh
+    docker-compose exec vscode /bin/mkdir /code/.ssh
+    docker-compose exec vscode /bin/chmod go= /code/.ssh
+    docker-compose cp ~/.ssh/id_ed25519 vscode:/code/.ssh/
+    docker-compose exec -u root vscode /bin/chown -R somebody /code/.ssh
 
 ### Docker Swarm Configuration File
 
@@ -52,7 +52,7 @@ services:
   vscode:
     configs:
       - source: ssh-key
-        target: /data/.ssh/id_ed25519
+        target: /code/.ssh/id_ed25519
 ```
 
 and below `configs`, define the `ssh-key` configuration that points to a SSH key on your host server:
@@ -63,4 +63,28 @@ configs:
     file: ~/.ssh/id_ed25519
 ```
 
-This configuration only works in docker swarm. 
+This configuration only works in docker swarm.
+
+# Sample Production File
+
+In a production envionment, you must use `https` so that the password is not sent unencrypted over the network.
+
+Therefore I recommend using `kong` as gateway server: It handles letsencrypt SSL certificate generation and stores the certificates on redis.
+
+See `production.yaml` and `kong.yaml`.
+
+You need a public host name and an E-Mail for letsencrypt. In `kong.yaml` replace the text `HOSTNAME` by the public host name (without path and without protocol, e.g. only `example.com`, not `https://example.com/`). You need to replace this 3 times. Then replace `EMAIL` by your E-Mail.
+
+To get an initial certificate:
+
+To test the configuration, replace `HOSTNAME` by your public host name and run:
+
+```bash
+curl http://localhost:8001/acme -d host=HOSTNAME -d test_http_challenge_flow=true
+```
+
+To get a certificate, replace `HOSTNAME` by your public host name and run:
+
+```bash
+curl http://localhost:8001/acme -d host=HOSTNAME
+```
