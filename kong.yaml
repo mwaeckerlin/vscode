@@ -1,0 +1,39 @@
+_format_version: "3.0"
+_transform: true
+
+plugins:
+  - name: acme
+    config:
+      account_email: EMAIL
+      domains:
+        - HOSTNAME
+      tos_accepted: true
+      renew_threshold_days: 5
+      storage: redis
+      storage_config:
+        redis:
+          host: redis
+          port: 6379
+
+services:
+  - name: vscode
+    url: http://vscode:8080
+    routes:
+      - name: vscode
+        protocols:
+          - https
+        paths:
+          - /
+        hosts:
+          - HOSTNAME
+
+  - name: acme-dummy
+    url: http://127.0.0.1:65535
+    routes:
+      - name: acme-dummy
+        protocols:
+          - http
+        paths:
+          - /.well-known/acme-challenge
+        hosts:
+          - HOSTNAME
