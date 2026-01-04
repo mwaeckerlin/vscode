@@ -38,7 +38,7 @@ services:
       - code:/code
 
   redis:
-    image: redis:latest
+    image: redis
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redis:/data
