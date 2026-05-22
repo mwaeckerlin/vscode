@@ -1,6 +1,21 @@
 # Docker Image for Visual Studio Code Server
 
-Run `docker-compose up`, browse to [http://localhost:8080], enter password: `change-me` and start with visual studio code.
+**Start in foreground (see logs in real-time):**
+```bash
+npm start
+```
+
+**Start in background (daemon mode):**
+```bash
+npm run start:daemon
+```
+
+**Stop daemon:**
+```bash
+npm stop
+```
+
+Browse to [http://localhost:8080], enter password: `change-me` and start with visual studio code.
 
 ## Configuration
 
@@ -38,12 +53,12 @@ You can add the key file in another way into the container, e.g. by copying it i
 
     docker-compose exec vscode /bin/mkdir /code/.ssh
     docker-compose exec vscode /bin/chmod go= /code/.ssh
-    docker-compose cp ~/.ssh/id_ed25519 vscode:/code/.ssh/
+    docker-compose cp ~/.ssh/ssh-id-gateway vscode:/code/.ssh/
     docker-compose exec -u root vscode /bin/chown -R somebody /code/.ssh
 
 ### Docker Swarm Configuration File
 
-To use your ssh key inside the visual studio code environment, namely to checkout from GitHub using SSH, you mount an existing SSH key as configuration, e.g. if you have an SSH key in `~/.ssh/id_ed25519`:
+To use your ssh key inside the visual studio code environment, namely to checkout from GitHub using SSH, you mount an existing SSH key as configuration, e.g. if you have an SSH key in `~/.ssh/ssh-id-gateway`:
 
 In `docker-compose.yml` include configuration `ssh-key` below `services:` - `vscode:` - `configs`:
 
@@ -52,7 +67,7 @@ services:
   vscode:
     configs:
       - source: ssh-key
-        target: /code/.ssh/id_ed25519
+        target: /code/.ssh/ssh-id-gateway
 ```
 
 and below `configs`, define the `ssh-key` configuration that points to a SSH key on your host server:
@@ -60,7 +75,7 @@ and below `configs`, define the `ssh-key` configuration that points to a SSH key
 ```yaml
 configs:
   ssh-key:
-    file: ~/.ssh/id_ed25519
+    file: ~/.ssh/ssh-id-gateway
 ```
 
 This configuration only works in docker swarm.
