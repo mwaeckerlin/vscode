@@ -1,0 +1,28 @@
+# E2E stack for mwaeckerlin/vscode: the server with a password, one with a
+# hashed password, and a client in the same network; no host port.
+name: vscode-e2e
+
+services:
+  vscode:
+    image: mwaeckerlin/vscode
+    build:
+      context: ../..
+    privileged: true
+    environment:
+      PASSWORD: e2e-password
+
+  vscode-hashed:
+    image: mwaeckerlin/vscode
+    privileged: true
+    environment:
+      # argon2 hash of «e2e-hashed»
+      HASHED_PASSWORD: ${E2E_HASH:-}
+
+  tester:
+    image: python:3.12-slim
+    profiles:
+      - tester
+    working_dir: /tests
+    volumes:
+      - ./:/tests:ro
+    command: ["python", "-u", "test_login.py"]

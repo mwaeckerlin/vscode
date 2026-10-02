@@ -1,28 +1,41 @@
 # Docker Image for Visual Studio Code Server
 
-**Start in foreground (see logs in real-time):**
+Visual Studio Code in the browser (code-server), with a docker daemon of its own inside the container. Published for `linux/amd64` and `linux/arm64`.
+
+There is no default password: set one first, in a file `.env` beside `docker-compose.yaml` (git ignores it) or in the environment:
+
 ```bash
-npm start
+$ echo "PASSWORD=$(pwgen -s 24 1)" > .env
 ```
 
-**Start in background (daemon mode):**
+Start it in the foreground, with the logs on the terminal:
+
 ```bash
-npm run start:daemon
+$ npm start
 ```
 
-**Stop daemon:**
+Start it in the background:
+
 ```bash
-npm stop
+$ npm run start:daemon
 ```
 
-Browse to [http://localhost:8080], enter password: `change-me` and start with visual studio code.
+Stop it:
+
+```bash
+$ npm stop
+```
+
+Browse to <http://localhost:8080>, enter your password and start with visual studio code.
 
 ## Configuration
 
-Variables:
+Variables, one of the two is required; without either the container refuses to start:
 
 - `PASSWORD`: define a password
 - `HASHED_PASSWORD`: define a password in hashed format, use `echo -n "a password" | npx argon2-cli -e` to hash a password
+
+Versions before 1.0.1 shipped a `.env` with a published password. Whoever runs an installation that kept it must set a new password.
 
 Volumes:
 
@@ -43,18 +56,20 @@ Be aware: With `--privileged` you gain access to upper layer operation system.
 
 We don't bind-mount `/var/run/docker.sock`, because that would give you access to all docker images in the host system, including your own. That's why we start an own docker instance inside the image.
 
-## Login to Github with SSH Key
+## GitHub SSH Key
 
-Be careful when you use this configuration. Make shure, the SSH key does only access GitHub and does not access any of your server. Otherwise create a new SSH key, only for this purpose.
+Use an SSH key that has access to GitHub only and to none of your servers; create a new key for this purpose where you have none.
 
 The SSH Key must not have a password.
 
 You can add the key file in another way into the container, e.g. by copying it into the volume. Make sure the file is owned by user `somebody` inside the container:
 
-    docker-compose exec vscode /bin/mkdir /code/.ssh
-    docker-compose exec vscode /bin/chmod go= /code/.ssh
-    docker-compose cp ~/.ssh/ssh-id-gateway vscode:/code/.ssh/
-    docker-compose exec -u root vscode /bin/chown -R somebody /code/.ssh
+```bash
+$ docker compose exec vscode /bin/mkdir /code/.ssh
+$ docker compose exec vscode /bin/chmod go= /code/.ssh
+$ docker compose cp ~/.ssh/ssh-id-gateway vscode:/code/.ssh/
+$ docker compose exec -u root vscode /bin/chown -R somebody /code/.ssh
+```
 
 ### Docker Swarm Configuration File
 
@@ -80,26 +95,33 @@ configs:
 
 This configuration only works in docker swarm.
 
-# Sample Production File
+## Development
 
-In a production envionment, you must use `https` so that the password is not sent unencrypted over the network.
+```bash
+$ npm run build
+$ npm test
+```
+
+`npm test` checks the feature register ([FEATURES.md](FEATURES.md), [TESTS.md](TESTS.md)) and runs `tests/run-e2e.sh`: the refusal without a password, the login with a plain and a hashed password, and the docker daemon inside. The image is built and published by the reusable workflow of [mwaeckerlin/scratch](https://github.com/mwaeckerlin/scratch#publishing-on-docker-hub).
+
+## Sample Production File
+
+In a production environment, you must use `https` so that the password is not sent unencrypted over the network.
 
 Therefore I recommend using `kong` as gateway server: It handles letsencrypt SSL certificate generation and stores the certificates on redis.
 
 See `production.yaml` and `kong.yaml`.
 
-You need a public host name and an E-Mail for letsencrypt. In `kong.yaml` replace the text `HOSTNAME` by the public host name (without path and without protocol, e.g. only `example.com`, not `https://example.com/`). You need to replace this 3 times. Then replace `EMAIL` by your E-Mail.
-
-To get an initial certificate:
+You need a public host name and an e-mail address for letsencrypt. In `kong.yaml` replace every `HOSTNAME` by the public host name (without path and without protocol, e.g. only `example.com`, not `https://example.com/`), then replace `EMAIL` by your e-mail address.
 
 To test the configuration, replace `HOSTNAME` by your public host name and run:
 
 ```bash
-curl http://localhost:8001/acme -d host=HOSTNAME -d test_http_challenge_flow=true
+$ curl http://localhost:8001/acme -d host=HOSTNAME -d test_http_challenge_flow=true
 ```
 
 To get a certificate, replace `HOSTNAME` by your public host name and run:
 
 ```bash
-curl http://localhost:8001/acme -d host=HOSTNAME
+$ curl http://localhost:8001/acme -d host=HOSTNAME
 ```

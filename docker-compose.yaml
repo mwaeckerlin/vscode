@@ -8,16 +8,18 @@ services:
     volumes:
       - code:/code
     environment:
-      HASHED_PASSWORD: # echo -n "YOUR-PASSWORD" | npx argon2-cli -e
-      PASSWORD:
+      # one of the two is required, the container refuses to start without;
+      # there is no default password, a published one would open every
+      # installation that keeps it
+      PASSWORD: ${PASSWORD:-}
+      HASHED_PASSWORD: ${HASHED_PASSWORD:-}
+    depends_on:
+      - fix-access
+  # gives the unprivileged user of the image write access to the volume
   fix-access:
-    image: mwaeckerlin/very-base
-    command:
-      - '/bin/sh'
-      - '-c'
-      - 'chown -R $${RUN_USER}:$${RUN_GROUP} /code'
+    image: mwaeckerlin/allow-write-access
     volumes:
-      - code:/code
+      - code:/app/code
 
 volumes:
   code:
